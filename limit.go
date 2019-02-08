@@ -8,14 +8,14 @@ import (
 
 // Limiter defines limiting of the rate
 type Limiter struct {
-	limit    uint
+	limit    uint32
 	interval time.Duration
 	m        sync.Mutex
 	counter  uint32
 }
 
 // New provides initialization of the Limiter
-func New(limit uint, interval time.Duration) *Limiter {
+func New(limit uint32, interval time.Duration) *Limiter {
 	return &Limiter{
 		limit:    limit,
 		interval: interval,
@@ -25,15 +25,15 @@ func New(limit uint, interval time.Duration) *Limiter {
 // Do provides trying to check limiter
 func (r *Limiter) Do() {
 	for {
-		ok, remaining := r.Try()
-		if ok {
+		remaining, err := r.apply()
+		if err == nil {
 			break
 		}
 		time.Sleep(remaining)
 	}
 }
 
-func (r *Limiter) apply() (ok bool, remaining time.Duration) {
+func (r *Limiter) apply() (time.Duration, error) {
 	r.m.Lock()
 	defer r.m.Unlock()
 	now := time.Now()
