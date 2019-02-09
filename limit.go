@@ -33,6 +33,17 @@ func (r *Limiter) Do() {
 			break
 		}
 		time.Sleep(remaining)
+		r.metaSelect()
+	}
+}
+
+// metaSelect provides handling of meta data
+func (r *Limiter) metaSelect() {
+	r.m.Lock()
+	defer r.m.Unlock()
+	value, ok := r.metaData["limit"]
+	if ok && value {
+		r.metaData["limit"] = false
 	}
 }
 
@@ -43,5 +54,6 @@ func (r *Limiter) apply() (time.Duration, error) {
 		atomic.AddUint32(&r.counter, 1)
 		return 0, nil
 	}
+	r.metaData["limit"] = true
 	return time.Second * r.interval, errors.New("closed interval")
 }
