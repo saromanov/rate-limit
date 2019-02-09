@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+const (
+	metaLimit    = "limit"
+	metaPreLimit = "prelimit"
+)
+
 // Limiter defines limiting of the rate
 type Limiter struct {
 	limit    uint32
@@ -41,9 +46,9 @@ func (r *Limiter) Do() {
 func (r *Limiter) metaSelect() {
 	r.m.Lock()
 	defer r.m.Unlock()
-	value, ok := r.metaData["limit"]
+	value, ok := r.metaData[metaLimit]
 	if ok && value {
-		r.metaData["limit"] = false
+		r.metaData[metaLimit] = false
 	}
 }
 
@@ -54,6 +59,10 @@ func (r *Limiter) apply() (time.Duration, error) {
 		atomic.AddUint32(&r.counter, 1)
 		return 0, nil
 	}
-	r.metaData["limit"] = true
-	return time.Second * r.interval, errors.New("closed interval")
+	lim, ok := r.metaData[metaLimit]
+	if ok && lim {
+		return 0, nil
+	}
+	r.metaData[metaLimit] = true
+	return r.interval, errors.New("closed interval")
 }
