@@ -6,3 +6,25 @@
 
 
 Implementation of simple rate limiter
+
+### Example
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/saromanov/rate-limit"
+)
+
+func main() {
+	lim := limit.New(10, 2*time.Second)
+	for index := 0; index < 20; index++ {
+		fmt.Println(index)
+		lim.Do()
+	}
+}
+```
+
+After 10-th iteration it'll slow down iteration and each will be after 2 seconds
