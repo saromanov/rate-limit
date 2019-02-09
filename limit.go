@@ -40,6 +40,7 @@ func New(limit uint32, interval time.Duration) *Limiter {
 		limit:    limit,
 		interval: interval,
 		metaData: make(map[string]bool),
+		message:  NoneMessage,
 	}
 }
 
