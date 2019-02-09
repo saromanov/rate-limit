@@ -13,6 +13,7 @@ type Limiter struct {
 	interval time.Duration
 	m        sync.Mutex
 	counter  uint32
+	metaData map[string]bool
 }
 
 // New provides initialization of the Limiter
@@ -20,6 +21,7 @@ func New(limit uint32, interval time.Duration) *Limiter {
 	return &Limiter{
 		limit:    limit,
 		interval: interval,
+		metaData: make(map[string]bool),
 	}
 }
 
@@ -41,5 +43,5 @@ func (r *Limiter) apply() (time.Duration, error) {
 		atomic.AddUint32(&r.counter, 1)
 		return 0, nil
 	}
-	return 0, errors.New("closed interval")
+	return time.Second * r.interval, errors.New("closed interval")
 }
