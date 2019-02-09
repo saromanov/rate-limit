@@ -12,16 +12,16 @@ const (
 	metaPreLimit = "prelimit"
 )
 
-// InfoMessage returns information from rate limiter
-type InfoMessage string
+// Status returns information from rate limiter
+type Status string
 
 var (
 	// NoneMessage is defaul message from limiter
-	NoneMessage InfoMessage
+	NoneMessage Status
 	// PreLimit returns in the case when limit is nealy reached
-	PreLimit InfoMessage = "You around the limit"
+	PreLimit Status = "You around the limit"
 	// LimitReached returns when limit is reached
-	LimitReached InfoMessage = "limit is reached"
+	LimitReached Status = "limit is reached"
 )
 
 // Limiter defines limiting of the rate
@@ -31,7 +31,7 @@ type Limiter struct {
 	m        sync.Mutex
 	counter  uint32
 	metaData map[string]bool
-	message  InfoMessage
+	message  Status
 }
 
 // New provides initialization of the Limiter
@@ -43,8 +43,8 @@ func New(limit uint32, interval time.Duration) *Limiter {
 	}
 }
 
-// Info returns info from limiter
-func (r *Limiter) Info() InfoMessage {
+// Status returns info from limiter
+func (r *Limiter) Status() Status {
 	return r.message
 }
 
@@ -73,12 +73,15 @@ func (r *Limiter) metaSelect() {
 func (r *Limiter) apply() (time.Duration, error) {
 	r.m.Lock()
 	defer r.m.Unlock()
-	if l := atomic.LoadUint32(&r.counter); l < r.limit {
+	l := atomic.LoadUint32(&r.counter)
+	if l < r.limit {
 		atomic.AddUint32(&r.counter, 1)
 		return 0, nil
 	}
+	r.message = LimitReached
 	lim, ok := r.metaData[metaLimit]
-	if ok && lim {
+	if ok && !lim {
+		r.metaData[metaLimit] = true
 		return 0, nil
 	}
 	r.metaData[metaLimit] = true
