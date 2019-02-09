@@ -12,6 +12,18 @@ const (
 	metaPreLimit = "prelimit"
 )
 
+// InfoMessage returns information from rate limiter
+type InfoMessage string
+
+var (
+	// NoneMessage is defaul message from limiter
+	NoneMessage InfoMessage
+	// PreLimit returns in the case when limit is nealy reached
+	PreLimit InfoMessage = "You around the limit"
+	// LimitReached returns when limit is reached
+	LimitReached InfoMessage = "limit is reached"
+)
+
 // Limiter defines limiting of the rate
 type Limiter struct {
 	limit    uint32
@@ -19,6 +31,7 @@ type Limiter struct {
 	m        sync.Mutex
 	counter  uint32
 	metaData map[string]bool
+	message  InfoMessage
 }
 
 // New provides initialization of the Limiter
@@ -28,6 +41,11 @@ func New(limit uint32, interval time.Duration) *Limiter {
 		interval: interval,
 		metaData: make(map[string]bool),
 	}
+}
+
+// Info returns info from limiter
+func (r *Limiter) Info() InfoMessage {
+	return r.message
 }
 
 // Do provides trying to check limiter
