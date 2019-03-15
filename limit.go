@@ -35,10 +35,10 @@ type Limiter struct {
 }
 
 // New provides initialization of the Limiter
-func New(limit uint32, interval time.Duration) *Limiter {
+func New(c *Config) *Limiter {
 	return &Limiter{
-		limit:    limit,
-		interval: interval,
+		limit:    c.Limit,
+		interval: c.Interval,
 		metaData: make(map[string]bool),
 		message:  NoneMessage,
 	}
