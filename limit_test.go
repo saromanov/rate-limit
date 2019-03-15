@@ -6,7 +6,10 @@ import (
 )
 
 func TestLimiter(t *testing.T) {
-	lim := New(2, 1*time.Second)
+	lim := New(&Config{
+		Limit:    2,
+		Interval: 1 * time.Second,
+	})
 	for index := 0; index < 10; index++ {
 		lim.Do()
 		st := lim.Status()
