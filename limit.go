@@ -28,7 +28,7 @@ var (
 type Limiter struct {
 	limit    uint32
 	interval time.Duration
-	m        sync.Mutex
+	m        sync.RWMutex
 	counter  uint32
 	metaData map[string]bool
 	message  Status
@@ -63,8 +63,8 @@ func (r *Limiter) Do() {
 
 // metaSelect provides handling of meta data
 func (r *Limiter) metaSelect() {
-	r.m.Lock()
-	defer r.m.Unlock()
+	r.m.RLock()
+	defer r.m.RUnlock()
 	value, ok := r.metaData[metaLimit]
 	if ok && value {
 		r.metaData[metaLimit] = false
