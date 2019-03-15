@@ -19,7 +19,10 @@ import (
 )
 
 func main() {
-	lim := limit.New(10, 2*time.Second)
+	lim := limit.New(&limit.Config{
+		Limit: 10, 
+		Interval: 2*time.Second,
+	})
 	for index := 0; index < 20; index++ {
 		fmt.Println(index)
 		lim.Do()
