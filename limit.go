@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	metaLimit    = "limit"
-	metaPreLimit = "prelimit"
+	metaLimit     = "limit"
+	metaPreLimit  = "prelimit"
+	emptyDuration = 0 * time.Second
 )
 
 const (
@@ -53,15 +54,17 @@ func New(c *Config) *Limiter {
 		afterLimit: c.AfterLimit,
 		reached:    make(chan int),
 	}
-
 	go lim.events()
 	return lim
 }
 
-// events consumes notifications about rate limit is reached
+// events consumes notifications if rate limit is reached or not
 // and after this, its starts timer for checking allowed limit time
 func (r *Limiter) events() {
 	for data := range r.reached {
+		if r.afterLimit == emptyDuration {
+			continue
+		}
 		switch data {
 		case limitReached:
 			go r.timer()
