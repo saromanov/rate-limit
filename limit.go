@@ -2,7 +2,6 @@ package limit
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -68,7 +67,7 @@ func (r *Limiter) events() {
 			go r.timer()
 			continue
 		case allowed:
-			fmt.Println("allowed")
+			atomic.StoreUint32(&r.counter, 0)
 		}
 	}
 }
@@ -127,7 +126,6 @@ func (r *Limiter) apply() (time.Duration, error) {
 func (r *Limiter) timer() {
 	timer := time.NewTimer(r.afterLimit)
 	<-timer.C
-	fmt.Println("Test")
 	go func() {
 		r.reached <- allowed
 	}()
