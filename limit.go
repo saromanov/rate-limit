@@ -62,6 +62,7 @@ func (r *Limiter) Do() {
 }
 
 // metaSelect provides handling of meta data
+// it checks if limit is reached
 func (r *Limiter) metaSelect() {
 	r.m.RLock()
 	defer r.m.RUnlock()
