@@ -13,6 +13,11 @@ const (
 	metaPreLimit = "prelimit"
 )
 
+const (
+	limitReached = iota + 1
+	allowed
+)
+
 // Status returns information from rate limiter
 type Status string
 
@@ -36,7 +41,7 @@ type Limiter struct {
 	metaData   map[string]bool
 	message    Status
 	afterLimit time.Duration
-	reached    chan bool
+	reached    chan int
 }
 
 // New provides initialization of the Limiter
@@ -47,7 +52,7 @@ func New(c *Config) *Limiter {
 		metaData:   make(map[string]bool),
 		message:    NoneMessage,
 		afterLimit: c.AfterLimit,
-		reached:    make(chan bool),
+		reached:    make(chan int),
 	}
 
 	go lim.events()
@@ -57,13 +62,13 @@ func New(c *Config) *Limiter {
 // events consumes notifications about rate limit is reached
 // and after this, its starts timer for checking allowed limit time
 func (r *Limiter) events() {
-
-	for {
-		select {
-		case data := <-r.reached:
-			if data {
-				fmt.Println("limit is reached")
-			}
+	for data := range r.reached {
+		switch data {
+		case limitReached:
+			go r.timer()
+			continue
+		case allowed:
+			fmt.Println("allowed")
 		}
 	}
 }
@@ -107,7 +112,7 @@ func (r *Limiter) apply() (time.Duration, error) {
 		return 0, nil
 	}
 	r.message = LimitReached
-	r.reached <- true
+	r.reached <- limitReached
 	lim, ok := r.metaData[metaLimit]
 	if ok && !lim {
 		r.metaData[metaLimit] = true
@@ -123,4 +128,7 @@ func (r *Limiter) timer() {
 	timer := time.NewTimer(r.afterLimit)
 	<-timer.C
 	fmt.Println("Test")
+	go func() {
+		r.reached <- allowed
+	}()
 }
