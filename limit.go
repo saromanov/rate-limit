@@ -2,6 +2,7 @@ package limit
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -22,6 +23,8 @@ var (
 	PreLimit Status = "You around the limit"
 	// LimitReached returns when limit is reached
 	LimitReached Status = "limit is reached"
+
+	errClosedInterval = errors.New("closed interval")
 )
 
 // Limiter defines limiting of the rate
@@ -33,16 +36,35 @@ type Limiter struct {
 	metaData   map[string]bool
 	message    Status
 	afterLimit time.Duration
+	reached    chan bool
 }
 
 // New provides initialization of the Limiter
 func New(c *Config) *Limiter {
-	return &Limiter{
+	lim := &Limiter{
 		limit:      c.Limit,
 		interval:   c.Interval,
 		metaData:   make(map[string]bool),
 		message:    NoneMessage,
 		afterLimit: c.AfterLimit,
+		reached:    make(chan bool),
+	}
+
+	go lim.events()
+	return lim
+}
+
+// events consumes notifications about rate limit is reached
+// and after this, its starts timer for checking allowed limit time
+func (r *Limiter) events() {
+
+	for {
+		select {
+		case data := <-r.reached:
+			if data {
+				fmt.Println("limit is reached")
+			}
+		}
 	}
 }
 
@@ -74,6 +96,8 @@ func (r *Limiter) metaSelect() {
 	}
 }
 
+// apply method first, checks how many hits need to reach interval
+// and then changed status of the Limiter to limitReached
 func (r *Limiter) apply() (time.Duration, error) {
 	r.m.Lock()
 	defer r.m.Unlock()
@@ -83,6 +107,7 @@ func (r *Limiter) apply() (time.Duration, error) {
 		return 0, nil
 	}
 	r.message = LimitReached
+	r.reached <- true
 	lim, ok := r.metaData[metaLimit]
 	if ok && !lim {
 		r.metaData[metaLimit] = true
@@ -97,4 +122,5 @@ func (r *Limiter) apply() (time.Duration, error) {
 func (r *Limiter) timer() {
 	timer := time.NewTimer(r.afterLimit)
 	<-timer.C
+	fmt.Println("Test")
 }
