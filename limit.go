@@ -26,21 +26,23 @@ var (
 
 // Limiter defines limiting of the rate
 type Limiter struct {
-	limit    uint32
-	interval time.Duration
-	m        sync.RWMutex
-	counter  uint32
-	metaData map[string]bool
-	message  Status
+	limit      uint32
+	interval   time.Duration
+	m          sync.RWMutex
+	counter    uint32
+	metaData   map[string]bool
+	message    Status
+	afterLimit time.Duration
 }
 
 // New provides initialization of the Limiter
 func New(c *Config) *Limiter {
 	return &Limiter{
-		limit:    c.Limit,
-		interval: c.Interval,
-		metaData: make(map[string]bool),
-		message:  NoneMessage,
+		limit:      c.Limit,
+		interval:   c.Interval,
+		metaData:   make(map[string]bool),
+		message:    NoneMessage,
+		afterLimit: c.AfterLimit,
 	}
 }
 
@@ -88,4 +90,11 @@ func (r *Limiter) apply() (time.Duration, error) {
 	}
 	r.metaData[metaLimit] = true
 	return r.interval, errors.New("closed interval")
+}
+
+// timer starts when limit is reached
+// and stops when AfterLimit interval is passed
+func (r *Limiter) timer() {
+	timer := time.NewTimer(r.afterLimit)
+	<-timer.C
 }
